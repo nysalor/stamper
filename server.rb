@@ -124,6 +124,27 @@ get '/csv/:year/:month' do
   end
 end
 
+get '/timecount/:year/:month' do
+  if @current_user
+    json({
+           time: Time.at(
+             Stamp.where(user_id: @current_user.id).list(params[:year].to_i, params[:month].to_i).map.with_index { |stamp, idx|
+             if idx > 0
+               if stamp && stamp[:out] && stamp[:in]
+                 stamp[:out] - stamp[:in]
+               else
+                 0
+               end
+             else
+               nil
+             end
+             }.compact.sum).utc.strftime("%X")
+         })
+  else
+    failed
+  end
+end
+
 helpers do
   def logged_in?
     @current_user != nil
