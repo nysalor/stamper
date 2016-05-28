@@ -34,7 +34,9 @@ class User < ActiveRecord::Base
 end
 
 before do
-  @current_user = User.where(token: params[:token], secret: params[:secret]).first
+  if params[:token] && params[:secret]
+    @current_user = User.where(token: params[:token], secret: Digest::MD5.hexdigest(params[:secret])).first
+  end
 end
 
 get '/' do
@@ -47,7 +49,9 @@ post '/users' do
       if User.where(name: params[:name]).empty?
         @current_user = User.new name: params[:name]
         @current_user.token = SecureRandom.urlsafe_base64
-        @current_user.secret = SecureRandom.urlsafe_base64(32)
+        @secret = SecureRandom.urlsafe_base64(32)
+        @current_user.secret = Digest::MD5.hexdigest(@secret)
+
         if @current_user.save
           json({
                  success: true,
@@ -55,7 +59,7 @@ post '/users' do
                    id: @current_user.id,
                    name: @current_user.name,
                    token: @current_user.token,
-                   secret: @current_user.secret
+                   secret: @secret
                  }
                })
         else
