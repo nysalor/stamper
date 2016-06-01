@@ -1,6 +1,7 @@
 ActiveRecord::Base.establish_connection(
   adapter: 'mysql2',
-  database: 'stamper',
-  username: ENV['RAILS_DB_USER'],
-  password: ENV['RAILS_DB_PASSWORD']
+  database: ENV['STAMPER_DB_NAME'] || 'stamper',
+  host: ENV['STAMPER_DB_HOST'] || 'localhost',
+  username: ENV['STAMPER_DB_USER'],
+  password: ENV['STAMPER_DB_PASSWORD']
 )
