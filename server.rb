@@ -109,21 +109,30 @@ post '/out' do
   end
 end
 
+get '/csv' do
+  if @current_user
+    json({
+           csv: csv
+         })
+  else
+    failed
+  end
+end
+
 get '/csv/:year/:month' do
   if @current_user
     json({
-           csv: Stamp.where(user_id: @current_user.id).list(params[:year].to_i, params[:month].to_i).map.with_index { |stamp, idx|
-             if idx > 0
-               date = [params[:year], params[:month], idx].join('/')
-               if stamp
-                 [date, timefmt(stamp[:in]), timefmt(stamp[:out])].join(',')
-               else
-                 [date, '', ''].join(',')
-               end
-             else
-               nil
-             end
-           }.compact
+           csv: csv
+         })
+  else
+    failed
+  end
+end
+
+get '/timecount' do
+  if @current_user
+    json({
+           time: Time.at(timecount).utc.strftime("%X")
          })
   else
     failed
@@ -133,18 +142,7 @@ end
 get '/timecount/:year/:month' do
   if @current_user
     json({
-           time: Time.at(
-             Stamp.where(user_id: @current_user.id).list(params[:year].to_i, params[:month].to_i).map.with_index { |stamp, idx|
-             if idx > 0
-               if stamp && stamp[:out] && stamp[:in]
-                 stamp[:out] - stamp[:in]
-               else
-                 0
-               end
-             else
-               nil
-             end
-             }.compact.sum).utc.strftime("%X")
+           time: Time.at(timecount).utc.strftime("%X")
          })
   else
     failed
@@ -180,6 +178,43 @@ helpers do
     end
   end
 
+  def stamps(year, month)
+    Stamp.where(user_id: @current_user.id).list(year, month.to_i)
+  end
+
+  def csv
+    year = params[:year] || Time.now.year
+    month = params[:month] || Time.now.month
+    stamps(year, month).map.with_index { |stamp, idx|
+      if idx > 0
+        date = [year, month, idx].join('/')
+        if stamp
+          [date, timefmt(stamp[:in]), timefmt(stamp[:out])].join(',')
+        else
+          [date, '', ''].join(',')
+        end
+      else
+        nil
+      end
+    }.compact
+  end
+
+  def timecount
+    year = params[:year] || Time.now.year
+    month = params[:month] || Time.now.month
+    stamps(year, month).map.with_index { |stamp, idx|
+      if idx > 0
+        if stamp && stamp[:out] && stamp[:in]
+          stamp[:out] - stamp[:in]
+        else
+          0
+        end
+      else
+        nil
+      end
+    }.compact.sum
+  end
+  
   def succeed
     json({ success: true })
   end
