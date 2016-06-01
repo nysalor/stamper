@@ -15,13 +15,15 @@ class Stamp < ActiveRecord::Base
     end_time = Time.local(year, month == 12 ? 1 : month + 1, 1)
     stamps = []
     of_range(start_time, end_time).order(:stamp_at).each do |stamp|
+      time = stamp.stamp_at
+      time.localtime
       if stamp.action == 'in'
-        unless stamps[stamp.stamp_at.mday]
-          stamps[stamp.stamp_at.mday] = { in: stamp.stamp_at }
+        unless stamps[time.mday]
+          stamps[time.mday] = { in: time }
         end
       elsif stamp.action == 'out'
-        stamps[stamp.stamp_at.mday] ||= {}
-        stamps[stamp.stamp_at.mday][:out] = stamp.stamp_at
+        stamps[time.mday] ||= {}
+        stamps[time.mday][:out] = time
       end
     end
     stamps
@@ -82,6 +84,7 @@ end
 post '/in' do
   if @current_user
     @stamp = Stamp.new user_id: @current_user.id, action: 'in', stamp_at: Time.now
+    @stamp.stamp_at = assigned_time if assigned_time
     if @stamp.save
       succeed
     else
@@ -95,6 +98,7 @@ end
 post '/out' do
   if @current_user
     @stamp = Stamp.new user_id: @current_user.id, action: 'out', stamp_at: Time.now
+    @stamp.stamp_at = assigned_time if assigned_time
     if @stamp.save
       succeed
     else
@@ -165,6 +169,14 @@ helpers do
       time.localtime.strftime("%H:%M")
     else
       ''
+    end
+  end
+
+  def assigned_time
+    if params[:time]
+      Time.parse params[:time]
+    else
+      nil
     end
   end
 
