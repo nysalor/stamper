@@ -122,7 +122,7 @@ end
 get '/csv/:year/:month' do
   if @current_user
     json({
-           csv: csv
+           csv: csv(params[:year], params[:month])
          })
   else
     failed
@@ -132,7 +132,7 @@ end
 get '/timecount' do
   if @current_user
     json({
-           time: Time.at(timecount).utc.strftime("%X")
+           time: timecount
          })
   else
     failed
@@ -141,10 +141,8 @@ end
 
 get '/timecount/:year/:month' do
   if @current_user
-    (hour, sec) = timecount.divmod(3600)
-    min = sec.quo(60).floor
     json({
-           time: "#{hour}:#{min.to_s.rjust(2, '0')}"
+           time: timecount(params[:year], params[:month])
          })
   else
     failed
@@ -184,9 +182,7 @@ helpers do
     Stamp.where(user_id: @current_user.id).list(year, month.to_i)
   end
 
-  def csv
-    year = params[:year] || Time.now.year
-    month = params[:month] || Time.now.month
+  def csv(year = Time.now.year, month = Time.now.month)
     stamps(year, month).map.with_index { |stamp, idx|
       if idx > 0
         date = [year, month, idx].join('/')
@@ -201,10 +197,8 @@ helpers do
     }.compact
   end
 
-  def timecount
-    year = params[:year] || Time.now.year
-    month = params[:month] || Time.now.month
-    stamps(year, month).map.with_index { |stamp, idx|
+  def timecount(year = Time.now.year, month = Time.now.month)
+    count_sec = stamps(year, month).map.with_index { |stamp, idx|
       if idx > 0
         if stamp && stamp[:out] && stamp[:in]
           stamp[:out] - stamp[:in]
@@ -215,6 +209,10 @@ helpers do
         nil
       end
     }.compact.sum
+
+    (hour, sec) = count_sec.divmod(3600)
+
+    "#{hour}:#{sec.quo(60).floor.to_s.rjust(2, '0')}"
   end
   
   def succeed
