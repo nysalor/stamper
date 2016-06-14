@@ -141,8 +141,10 @@ end
 
 get '/timecount/:year/:month' do
   if @current_user
+    (hour, sec) = timecount.divmod(3600)
+    min = sec.quo(60).floor
     json({
-           time: Time.at(timecount).utc.strftime("%X")
+           time: "#{hour}:#{min.to_s.rjust(2, '0')}"
          })
   else
     failed
