@@ -131,9 +131,7 @@ end
 
 get '/timecount' do
   if @current_user
-    json({
-           time: timecount
-         })
+    json timecount
   else
     failed
   end
@@ -141,9 +139,7 @@ end
 
 get '/timecount/:year/:month' do
   if @current_user
-    json({
-           time: timecount(params[:year], params[:month])
-         })
+    json timecount(params[:year], params[:month])
   else
     failed
   end
@@ -198,9 +194,11 @@ helpers do
   end
 
   def timecount(year = Time.now.year, month = Time.now.month)
+    day_count = 0
     count_sec = stamps(year, month).map.with_index { |stamp, idx|
       if idx > 0
         if stamp && stamp[:out] && stamp[:in]
+          day_count += 1
           stamp[:out] - stamp[:in]
         else
           0
@@ -212,7 +210,10 @@ helpers do
 
     (hour, sec) = count_sec.divmod(3600)
 
-    "#{hour}:#{sec.quo(60).floor.to_s.rjust(2, '0')}"
+    {
+      timecount: "#{hour}:#{sec.quo(60).floor.to_s.rjust(2, '0')}",
+      daycount: day_count
+    }
   end
   
   def succeed
