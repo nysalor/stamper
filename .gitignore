@@ -19,7 +19,9 @@
 .idea
 .secret
 .rspec
+.ruby-version
 
+/start.sh
 /vendor/bundle
 /public/system/*
 /coverage/
