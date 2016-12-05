@@ -12,7 +12,11 @@ require 'sinatra/reloader' if development?
 class Stamp < ActiveRecord::Base
   def self.list(year = Time.now.year, month = Time.now.month)
     start_time = Time.local(year, month, 1)
-    end_time = Time.local(year, month == 12 ? 1 : month + 1, 1)
+    if month == 12
+      end_time = Time.local(year + 1, 1, 1)
+    else
+    end_time = Time.local(year, month + 1, 1)
+    end
     stamps = []
     of_range(start_time, end_time).order(:stamp_at).each do |stamp|
       time = stamp.stamp_at
